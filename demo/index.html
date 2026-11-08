@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MoroccoFormKit — Demo</title>
+  <style>
+    :root { font: 16px/1.5 system-ui, sans-serif; color-scheme: light; }
+    body { background: #f7f8f6; margin: 0; padding: 36px 16px; color: #18352b; }
+    main { max-width: 500px; margin: auto; padding: 32px; background: white; border-radius: 18px; box-shadow: 0 7px 32px #09231412; }
+    h1 { font-size: 1.7rem; margin-top: 0; }
+    label { display: block; margin: 18px 0 6px; font-weight: 600; }
+    input, select, button { font: inherit; box-sizing: border-box; width: 100%; padding: 11px; border-radius: 8px; }
+    input, select { border: 1px solid #aab7ad; }
+    button { margin-top: 24px; border: none; background: #176347; color: white; font-weight: 650; cursor: pointer; }
+    .error { color: #a52a2a; min-height: 24px; margin-top: 5px; }
+    #result { margin-top: 16px; font-weight: 600; }
+    footer { color: #64736a; margin-top: 28px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main id="container">
+    <h1>MoroccoFormKit</h1>
+    <label for="language">Language / Langue / اللغة</label>
+    <select id="language"><option value="fr">Français</option><option value="ar">العربية</option><option value="darija">الدارجة المغربية</option></select>
+    <form id="demo-form" novalidate>
+      <label id="mobile-label" for="mobile"></label>
+      <input id="mobile" name="mobile" autocomplete="tel" inputmode="tel" placeholder="06 12 34 56 78" aria-describedby="mobile-error">
+      <div class="error" id="mobile-error" aria-live="polite"></div>
+      <label id="postal-label" for="postal"></label>
+      <input id="postal" name="postal" autocomplete="postal-code" inputmode="numeric" placeholder="40000" aria-describedby="postal-error">
+      <div class="error" id="postal-error" aria-live="polite"></div>
+      <button id="submit" type="submit"></button>
+    </form>
+    <div id="result" role="status" aria-live="polite"></div>
+    <footer>Local-only format validation. No data is transmitted.</footer>
+  </main>
+  <script type="module">
+    import { getMessage, isValidMoroccanMobile, isValidMoroccanPostalCode, normalizeMoroccanMobile } from '../src/index.js';
+    const $ = (id) => document.getElementById(id);
+    const language = $('language');
+    function localize() {
+      const locale = language.value;
+      document.documentElement.lang = locale === 'darija' ? 'ary' : locale;
+      $('container').dir = locale === 'fr' ? 'ltr' : 'rtl';
+      $('mobile-label').textContent = getMessage('mobileLabel', locale);
+      $('postal-label').textContent = getMessage('postalLabel', locale);
+      $('submit').textContent = getMessage('submit', locale);
+      $('mobile-error').textContent = '';
+      $('postal-error').textContent = '';
+      $('result').textContent = '';
+    }
+    language.addEventListener('change', localize);
+    $('demo-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const locale = language.value;
+      const phone = $('mobile').value;
+      const postal = $('postal').value;
+      const mobileError = phone.trim() === '' ? 'required' : (!isValidMoroccanMobile(phone) ? 'invalidMobile' : null);
+      const postalError = postal.trim() === '' ? 'required' : (!isValidMoroccanPostalCode(postal) ? 'invalidPostalCode' : null);
+      $('mobile-error').textContent = mobileError ? getMessage(mobileError, locale) : '';
+      $('postal-error').textContent = postalError ? getMessage(postalError, locale) : '';
+      $('mobile').setAttribute('aria-invalid', String(Boolean(mobileError)));
+      $('postal').setAttribute('aria-invalid', String(Boolean(postalError)));
+      $('result').textContent = (!mobileError && !postalError) ? `${getMessage('success', locale)} (${normalizeMoroccanMobile(phone)})` : '';
+    });
+    localize();
+  </script>
+</body>
+</html>
